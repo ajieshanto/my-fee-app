@@ -1,0 +1,23 @@
+[
+    {
+        "student_name": "Rahul",
+        "month": "October",
+        "amount": 2000,
+        "payment_mode": "UPI",
+        "date_collected": "2025-10-05 08:30:29"
+    },
+    {
+        "student_name": "Anita",
+        "month": "October",
+        "amount": 1500,
+        "payment_mode": "Cash",
+        "date_collected": "2025-10-05 08:33:15"
+    },
+    {
+        "student_name": "Rahul",
+        "month": "October",
+        "amount": 1500,
+        "payment_mode": "UPI",
+        "date_collected": "2025-10-05 08:50:15"
+    }
+]
