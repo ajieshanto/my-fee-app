@@ -1,119 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Fee Management</title>
+    <meta charset="UTF-8">
+    <title>Fee Collection App</title>
     <style>
-        body { font-family: Arial; margin: 20px; }
-        input, select { margin: 5px; padding: 5px; }
-        button { margin: 5px; padding: 5px 10px; }
-        table { border-collapse: collapse; margin-top: 20px; width: 80%; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+            background-color: #f0f2f5;
+        }
+        h2 {
+            color: #333;
+        }
+        input, button {
+            display: block;
+            margin: 10px 0;
+            padding: 8px;
+            width: 300px;
+        }
+        button {
+            width: 150px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            color: #333;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <h1>Fee Management</h1>
 
-    <h2>Add / Update Fee</h2>
-    <input id="student" placeholder="Student Name">
-    <input id="month" placeholder="Month">
-    <input id="amount" placeholder="Amount">
-    <select id="payment">
-        <option value="UPI">UPI</option>
-        <option value="Cash">Cash</option>
-    </select>
-    <button onclick="addFee()">Add Fee</button>
-    <button onclick="updateFee()">Update Fee</button>
-    <button onclick="deleteFee()">Delete Fee</button>
+<h2>Collect Fee</h2>
 
-    <h2>View Fees</h2>
-    <input id="filterStudent" placeholder="Filter by student">
-    <input id="filterMonth" placeholder="Filter by month">
-    <button onclick="viewFees()">View</button>
+<input type="text" id="name" placeholder="Student Name">
+<input type="text" id="month" placeholder="Month">
+<input type="number" id="amount" placeholder="Amount">
+<input type="text" id="payment_mode" placeholder="Payment Mode">
+<button onclick="collectFee()">Submit</button>
 
-    <table id="feeTable">
-        <thead>
-            <tr>
-                <th>Student</th>
-                <th>Month</th>
-                <th>Amount</th>
-                <th>Payment Mode</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+<div id="result"></div>
 
 <script>
-const API_URL = "https://<your-backend-render-url>/api";
+  // Replace this URL with your actual Render backend URL
+  const API_URL = "https://my-fee-app-1.onrender.com/api";
 
-async function addFee() {
+  function collectFee() {
     const data = {
-        student_name: document.getElementById("student").value,
-        month: document.getElementById("month").value,
-        amount: parseInt(document.getElementById("amount").value),
-        payment_mode: document.getElementById("payment").value
+      student_name: document.getElementById("name").value,
+      month: document.getElementById("month").value,
+      amount: parseInt(document.getElementById("amount").value),
+      payment_mode: document.getElementById("payment_mode").value
     };
-    const res = await fetch(`${API_URL}/CollectFee`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    });
-    alert(await res.text());
-    viewFees();
-}
 
-async function updateFee() {
-    const data = {
-        student_name: document.getElementById("student").value,
-        month: document.getElementById("month").value,
-        amount: parseInt(document.getElementById("amount").value),
-        payment_mode: document.getElementById("payment").value
-    };
-    const res = await fetch(`${API_URL}/UpdateFee`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+    fetch(`${API_URL}/CollectFee`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+      console.log(result);
+      document.getElementById("result").innerText = "Fee collected successfully!";
+    })
+    .catch(error => {
+      console.error("Error:", error);
+      document.getElementById("result").innerText = "Error collecting fee. Check console.";
     });
-    alert(await res.text());
-    viewFees();
-}
-
-async function deleteFee() {
-    const data = {
-        student_name: document.getElementById("student").value,
-        month: document.getElementById("month").value
-    };
-    const res = await fetch(`${API_URL}/DeleteFee`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    });
-    alert(await res.text());
-    viewFees();
-}
-
-async function viewFees() {
-    const student = document.getElementById("filterStudent").value;
-    const month = document.getElementById("filterMonth").value;
-    let url = `${API_URL}/ViewFees?`;
-    if(student) url += `student_name=${student}&`;
-    if(month) url += `month=${month}&`;
-    
-    const res = await fetch(url);
-    const data = await res.json();
-    
-    const tbody = document.querySelector("#feeTable tbody");
-    tbody.innerHTML = "";
-    data.fees_records.forEach(fee => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${fee.student_name}</td>
-            <td>${fee.month}</td>
-            <td>${fee.amount}</td>
-            <td>${fee.payment_mode}</td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
+  }
 </script>
+
 </body>
 </html>
+
