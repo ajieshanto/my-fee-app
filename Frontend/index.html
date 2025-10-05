@@ -1,39 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Fee Collection App</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 50px;
-            background-color: #f0f2f5;
-        }
-        h2 {
-            color: #333;
-        }
-        input, button {
-            display: block;
-            margin: 10px 0;
-            padding: 8px;
-            width: 300px;
-        }
-        button {
-            width: 150px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #result {
-            margin-top: 20px;
-            color: #333;
-            font-weight: bold;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Fee Collection App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 50px;
+      background-color: #f0f2f5;
+    }
+    h2 {
+      color: #333;
+    }
+    input, button {
+      display: block;
+      margin: 10px 0;
+      padding: 8px;
+      width: 300px;
+    }
+    button {
+      width: 150px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #result {
+      margin-top: 20px;
+      color: #333;
+      font-weight: bold;
+    }
+    table {
+      margin-top: 20px;
+      border-collapse: collapse;
+      width: 80%;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+  </style>
 </head>
 <body>
 
@@ -43,12 +56,28 @@
 <input type="text" id="month" placeholder="Month">
 <input type="number" id="amount" placeholder="Amount">
 <input type="text" id="payment_mode" placeholder="Payment Mode">
+<input type="date" id="date" placeholder="Fee Date">
 <button onclick="collectFee()">Submit</button>
 
 <div id="result"></div>
 
+<h2>Collected Fees</h2>
+<button onclick="viewFees()">Refresh Table</button>
+<table id="feesTable">
+  <thead>
+    <tr>
+      <th>Student Name</th>
+      <th>Month</th>
+      <th>Amount</th>
+      <th>Payment Mode</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
 <script>
-  // Replace this URL with your actual Render backend URL
+  // Replace this with your actual Render backend URL
   const API_URL = "https://my-fee-app-1.onrender.com/api";
 
   function collectFee() {
@@ -56,28 +85,52 @@
       student_name: document.getElementById("name").value,
       month: document.getElementById("month").value,
       amount: parseInt(document.getElementById("amount").value),
-      payment_mode: document.getElementById("payment_mode").value
+      payment_mode: document.getElementById("payment_mode").value,
+      date: document.getElementById("date").value
     };
 
     fetch(`${API_URL}/CollectFee`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(result => {
-      console.log(result);
       document.getElementById("result").innerText = "Fee collected successfully!";
+      viewFees(); // update table after submission
     })
     .catch(error => {
       console.error("Error:", error);
       document.getElementById("result").innerText = "Error collecting fee. Check console.";
     });
   }
+
+  function viewFees() {
+    fetch(`${API_URL}/ViewFees`)
+      .then(response => response.json())
+      .then(fees => {
+        const tbody = document.getElementById("feesTable").querySelector("tbody");
+        tbody.innerHTML = ""; // clear existing rows
+        fees.forEach(fee => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${fee.student_name}</td>
+            <td>${fee.month}</td>
+            <td>${fee.amount}</td>
+            <td>${fee.payment_mode}</td>
+            <td>${fee.date}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(error => {
+        console.error("Error fetching fees:", error);
+      });
+  }
+
+  // Load table on page load
+  window.onload = viewFees;
 </script>
 
 </body>
 </html>
-
