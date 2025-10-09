@@ -3,86 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <title>Fee Collection Portal</title>
-  <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #999;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-  </style>
 </head>
 <body>
   <h2>Fee Collection</h2>
   <form id="feeForm">
     <input type="text" id="student" placeholder="Student Name" required>
     <input type="number" id="amount" placeholder="Amount" required>
+    <input type="text" id="month" placeholder="Month" required>
+    <input type="text" id="payment_mode" placeholder="Payment Mode" required>
     <button type="submit">Submit Fee</button>
   </form>
 
   <h3>All Fees</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Student</th>
-        <th>Amount</th>
-        <th>Month</th>
-        <th>Payment Mode</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-    <tbody id="feeTableBody">
-      <!-- Fee rows will be inserted here -->
-    </tbody>
-  </table>
+  <ul id="feeList"></ul>
 
   <script>
-    const backendUrl = "https://my-fee-app-1.onrender.com"; // your backend URL
+    const backendUrl = "https://my-fee-app-1.onrender.com"; // your Render backend
 
     async function loadFees() {
-      const res = await fetch(`${backendUrl}/ViewFees`);
-      const data = await res.json();
-      const tbody = document.getElementById("feeTableBody");
-      tbody.innerHTML = ""; // clear previous rows
-
-      data.forEach(fee => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${fee.id}</td>
-          <td>${fee.student_name}</td>
-          <td>₹${fee.amount}</td>
-          <td>${fee.month}</td>
-          <td>${fee.payment_mode}</td>
-          <td>${fee.date}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+      try {
+        const res = await fetch(`${backendUrl}/ViewFees`);
+        const data = await res.json();
+        const list = document.getElementById("feeList");
+        list.innerHTML = "";
+        data.forEach(fee => {
+          const li = document.createElement("li");
+          li.textContent = `${fee.id}. ${fee.student_name} - ₹${fee.amount} (${fee.month}, ${fee.payment_mode}) on ${fee.date}`;
+          list.appendChild(li);
+        });
+      } catch (err) {
+        console.error("Error loading fees:", err);
+      }
     }
 
     document.getElementById("feeForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const student = document.getElementById("student").value;
-      const amount = document.getElementById("amount").value;
+      const student_name = document.getElementById("student").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+      const month = document.getElementById("month").value;
+      const payment_mode = document.getElementById("payment_mode").value;
 
-      await fetch(`${backendUrl}/CollectFee`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student_name: student, amount: parseInt(amount), month: "October", payment_mode: "UPI" })
-      });
+      try {
+        const res = await fetch(`${backendUrl}/CollectFee`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ student_name, amount, month, payment_mode })
+        });
 
-      document.getElementById("student").value = "";
-      document.getElementById("amount").value = "";
-      loadFees(); // refresh table
+        const result = await res.json();
+        if (res.ok) {
+          alert("Fee submitted successfully!");
+        } else {
+          alert("Failed to submit fee: " + (result.error || result.message));
+        }
+
+        document.getElementById("student").value = "";
+        document.getElementById("amount").value = "";
+        document.getElementById("month").value = "";
+        document.getElementById("payment_mode").value = "";
+        loadFees();
+      } catch (err) {
+        console.error("Error submitting fee:", err);
+        alert("Failed to submit fee. Check backend logs.");
+      }
     });
 
+    // Load fees on page load
     loadFees();
   </script>
 </body>
