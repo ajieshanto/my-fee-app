@@ -1,14 +1,16 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # <-- Import CORS
 import json, os
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app)  # <-- Enable CORS for all routes
 
 # Path to your data file
 DATA_FILE = os.path.join(os.path.dirname(__file__), "FeeCollectionAPI", "CollectFee", "fees_data.json")
 
 
-# --- Helper function ---
+# --- Helper functions ---
 def load_data():
     if not os.path.exists(DATA_FILE):
         with open(DATA_FILE, "w") as f:
@@ -22,14 +24,12 @@ def save_data(data):
         json.dump(data, f, indent=4)
 
 
-# --- API ROUTES ---
-
+# --- API Routes ---
 @app.route("/")
 def home():
     return "Fee Collection API is running 🚀"
 
 
-# Collect Fee (POST)
 @app.route("/CollectFee", methods=["POST"])
 def collect_fee():
     try:
@@ -46,7 +46,6 @@ def collect_fee():
         return jsonify({"error": str(e)}), 500
 
 
-# View Fees (GET)
 @app.route("/ViewFees", methods=["GET"])
 def view_fees():
     try:
@@ -56,7 +55,6 @@ def view_fees():
         return jsonify({"error": str(e)}), 500
 
 
-# Update Fee (PUT)
 @app.route("/UpdateFee/<int:fee_id>", methods=["PUT"])
 def update_fee(fee_id):
     try:
@@ -74,7 +72,6 @@ def update_fee(fee_id):
         return jsonify({"error": str(e)}), 500
 
 
-# Delete Fee (DELETE)
 @app.route("/DeleteFee/<int:fee_id>", methods=["DELETE"])
 def delete_fee(fee_id):
     try:
