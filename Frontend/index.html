@@ -3,70 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <title>Fee Collection Portal</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #999;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
 </head>
 <body>
   <h2>Fee Collection</h2>
   <form id="feeForm">
-    <input type="text" id="studentName" placeholder="Student Name" required>
+    <input type="text" id="student" placeholder="Student Name" required>
     <input type="number" id="amount" placeholder="Amount" required>
-    <input type="text" id="month" placeholder="Month" required>
-    <select id="paymentMode" required>
-      <option value="UPI">UPI</option>
-      <option value="Cash">Cash</option>
-    </select>
     <button type="submit">Submit Fee</button>
   </form>
 
   <h3>All Fees</h3>
-  <ul id="feeList"></ul>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Student</th>
+        <th>Amount</th>
+        <th>Month</th>
+        <th>Payment Mode</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="feeTableBody">
+      <!-- Fee rows will be inserted here -->
+    </tbody>
+  </table>
 
   <script>
-    const backendUrl = "https://my-fee-app-1.onrender.com/api"; // include /api
+    const backendUrl = "https://my-fee-app-1.onrender.com"; // your backend URL
 
     async function loadFees() {
-      try {
-        const res = await fetch(`${backendUrl}/ViewFees`);
-        const data = await res.json();
-        const list = document.getElementById("feeList");
-        list.innerHTML = "";
-        data.forEach(fee => {
-          const li = document.createElement("li");
-          li.textContent = `${fee.id}. ${fee.student} - ₹${fee.amount} (${fee.month}) via ${fee.payment_mode} on ${fee.date})`;
-          list.appendChild(li);
-        });
-      } catch (err) {
-        console.error("Error loading fees:", err);
-      }
+      const res = await fetch(`${backendUrl}/ViewFees`);
+      const data = await res.json();
+      const tbody = document.getElementById("feeTableBody");
+      tbody.innerHTML = ""; // clear previous rows
+
+      data.forEach(fee => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${fee.id}</td>
+          <td>${fee.student_name}</td>
+          <td>₹${fee.amount}</td>
+          <td>${fee.month}</td>
+          <td>${fee.payment_mode}</td>
+          <td>${fee.date}</td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
     document.getElementById("feeForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const student_name = document.getElementById("student").value;
-  const amount = parseInt(document.getElementById("amount").value);
+      e.preventDefault();
+      const student = document.getElementById("student").value;
+      const amount = document.getElementById("amount").value;
 
-  await fetch(`${backendUrl}/CollectFee`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      student_name,
-      month: "October",       // or take from input if you want dynamic
-      amount,
-      payment_mode: "UPI"     // or dynamic input
-    })
-  });
+      await fetch(`${backendUrl}/CollectFee`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_name: student, amount: parseInt(amount), month: "October", payment_mode: "UPI" })
+      });
 
-  document.getElementById("student").value = "";
-  document.getElementById("amount").value = "";
-  loadFees();
-});
-
-      } catch (err) {
-        console.error("Error submitting fee:", err);
-        alert("Failed to submit fee. Check backend logs.");
-      }
+      document.getElementById("student").value = "";
+      document.getElementById("amount").value = "";
+      loadFees(); // refresh table
     });
 
-    window.onload = loadFees;
+    loadFees();
   </script>
 </body>
 </html>
