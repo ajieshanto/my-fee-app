@@ -1,38 +1,94 @@
 from flask import Flask, request, jsonify
+import json, os
+from datetime import datetime
 
 app = Flask(__name__)
 
-fees_data = []
+# Path to your data file
+DATA_FILE = os.path.join(os.path.dirname(__file__), "FeeCollectionAPI", "CollectFee", "fees_data.json")
 
-@app.route("/api/CollectFee", methods=["POST"])
+
+# --- Helper function ---
+def load_data():
+    if not os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "w") as f:
+            json.dump([], f)
+    with open(DATA_FILE, "r") as f:
+        return json.load(f)
+
+
+def save_data(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+
+# --- API ROUTES ---
+
+@app.route("/")
+def home():
+    return "Fee Collection API is running 🚀"
+
+
+# Collect Fee (POST)
+@app.route("/CollectFee", methods=["POST"])
 def collect_fee():
-    data = request.get_json()
-    fees_data.append(data)
-    return jsonify({"status": "success", "data": data})
+    try:
+        data = request.get_json()
+        fees = load_data()
 
-@app.route("/api/ViewFees", methods=["GET"])
+        data["id"] = len(fees) + 1
+        data["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        fees.append(data)
+
+        save_data(fees)
+        return jsonify({"message": "Fee collected successfully", "data": data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# View Fees (GET)
+@app.route("/ViewFees", methods=["GET"])
 def view_fees():
-    student = request.args.get("student_name")
-    month = request.args.get("month")
-    results = fees_data
-    if student:
-        results = [f for f in results if f["student_name"] == student]
-    if month:
-        results = [f for f in results if f["month"] == month]
-    return jsonify({"fees_records": results})
+    try:
+        fees = load_data()
+        return jsonify(fees), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@app.route("/api/UpdateFee", methods=["POST"])
-def update_fee():
-    data = request.get_json()
-    for f in fees_data:
-        if f["student_name"] == data["student_name"] and f["month"] == data["month"]:
-            f.update(data)
-            return jsonify({"status": "updated", "data": f})
-    return jsonify({"status": "error", "message": "Record not found"}), 404
 
-@app.route("/api/DeleteFee", methods=["POST"])
-def delete_fee():
-    global fees_data
-    data = request.get_json()
-    fees_data = [f for f in fees_data if not (f["student_name"] == data["student_name"] and f["month"] == data["month"])]
-    return jsonify({"status": "deleted"})
+# Update Fee (PUT)
+@app.route("/UpdateFee/<int:fee_id>", methods=["PUT"])
+def update_fee(fee_id):
+    try:
+        data = request.get_json()
+        fees = load_data()
+
+        for fee in fees:
+            if fee["id"] == fee_id:
+                fee.update(data)
+                save_data(fees)
+                return jsonify({"message": "Fee updated successfully", "data": fee}), 200
+
+        return jsonify({"message": "Fee not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Delete Fee (DELETE)
+@app.route("/DeleteFee/<int:fee_id>", methods=["DELETE"])
+def delete_fee(fee_id):
+    try:
+        fees = load_data()
+        updated_fees = [fee for fee in fees if fee["id"] != fee_id]
+
+        if len(fees) == len(updated_fees):
+            return jsonify({"message": "Fee not found"}), 404
+
+        save_data(updated_fees)
+        return jsonify({"message": "Fee deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

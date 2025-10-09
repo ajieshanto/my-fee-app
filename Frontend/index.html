@@ -2,135 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Fee Collection App</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 50px;
-      background-color: #f0f2f5;
-    }
-    h2 {
-      color: #333;
-    }
-    input, button {
-      display: block;
-      margin: 10px 0;
-      padding: 8px;
-      width: 300px;
-    }
-    button {
-      width: 150px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    #result {
-      margin-top: 20px;
-      color: #333;
-      font-weight: bold;
-    }
-    table {
-      margin-top: 20px;
-      border-collapse: collapse;
-      width: 80%;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f4f4f4;
-    }
-  </style>
+  <title>Fee Collection Portal</title>
 </head>
 <body>
+  <h2>Fee Collection</h2>
+  <form id="feeForm">
+    <input type="text" id="studentName" placeholder="Student Name" required>
+    <input type="number" id="amount" placeholder="Amount" required>
+    <input type="text" id="month" placeholder="Month" required>
+    <select id="paymentMode" required>
+      <option value="UPI">UPI</option>
+      <option value="Cash">Cash</option>
+    </select>
+    <button type="submit">Submit Fee</button>
+  </form>
 
-<h2>Collect Fee</h2>
+  <h3>All Fees</h3>
+  <ul id="feeList"></ul>
 
-<input type="text" id="name" placeholder="Student Name">
-<input type="text" id="month" placeholder="Month">
-<input type="number" id="amount" placeholder="Amount">
-<input type="text" id="payment_mode" placeholder="Payment Mode">
-<input type="date" id="date" placeholder="Fee Date">
-<button onclick="collectFee()">Submit</button>
+  <script>
+    const backendUrl = "https://my-fee-app-1.onrender.com/api"; // include /api
 
-<div id="result"></div>
-
-<h2>Collected Fees</h2>
-<button onclick="viewFees()">Refresh Table</button>
-<table id="feesTable">
-  <thead>
-    <tr>
-      <th>Student Name</th>
-      <th>Month</th>
-      <th>Amount</th>
-      <th>Payment Mode</th>
-      <th>Date</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<script>
-  // Replace this with your actual Render backend URL
-  const API_URL = "https://my-fee-app-1.onrender.com/api";
-
-  function collectFee() {
-    const data = {
-      student_name: document.getElementById("name").value,
-      month: document.getElementById("month").value,
-      amount: parseInt(document.getElementById("amount").value),
-      payment_mode: document.getElementById("payment_mode").value,
-      date: document.getElementById("date").value
-    };
-
-    fetch(`${API_URL}/CollectFee`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
-      document.getElementById("result").innerText = "Fee collected successfully!";
-      viewFees(); // update table after submission
-    })
-    .catch(error => {
-      console.error("Error:", error);
-      document.getElementById("result").innerText = "Error collecting fee. Check console.";
-    });
-  }
-
-  function viewFees() {
-    fetch(`${API_URL}/ViewFees`)
-      .then(response => response.json())
-      .then(fees => {
-        const tbody = document.getElementById("feesTable").querySelector("tbody");
-        tbody.innerHTML = ""; // clear existing rows
-        fees.forEach(fee => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${fee.student_name}</td>
-            <td>${fee.month}</td>
-            <td>${fee.amount}</td>
-            <td>${fee.payment_mode}</td>
-            <td>${fee.date}</td>
-          `;
-          tbody.appendChild(row);
+    async function loadFees() {
+      try {
+        const res = await fetch(`${backendUrl}/ViewFees`);
+        const data = await res.json();
+        const list = document.getElementById("feeList");
+        list.innerHTML = "";
+        data.forEach(fee => {
+          const li = document.createElement("li");
+          li.textContent = `${fee.id}. ${fee.student} - ₹${fee.amount} (${fee.month}) via ${fee.payment_mode} on ${fee.date})`;
+          list.appendChild(li);
         });
-      })
-      .catch(error => {
-        console.error("Error fetching fees:", error);
-      });
-  }
+      } catch (err) {
+        console.error("Error loading fees:", err);
+      }
+    }
 
-  // Load table on page load
-  window.onload = viewFees;
-</script>
+    document.getElementById("feeForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
 
+      const student_name = document.getElementById("studentName").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+      const month = document.getElementById("month").value;
+      const payment_mode = document.getElementById("paymentMode").value;
+
+      try {
+        const res = await fetch(`${backendUrl}/CollectFee`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ student_name, amount, month, payment_mode })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        // Reset form
+        document.getElementById("studentName").value = "";
+        document.getElementById("amount").value = "";
+        document.getElementById("month").value = "";
+        document.getElementById("paymentMode").value = "UPI";
+
+        loadFees();
+      } catch (err) {
+        console.error("Error submitting fee:", err);
+        alert("Failed to submit fee. Check backend logs.");
+      }
+    });
+
+    window.onload = loadFees;
+  </script>
 </body>
 </html>
