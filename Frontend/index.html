@@ -40,29 +40,26 @@
     }
 
     document.getElementById("feeForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
+  e.preventDefault();
+  const student_name = document.getElementById("student").value;
+  const amount = parseInt(document.getElementById("amount").value);
 
-      const student_name = document.getElementById("studentName").value;
-      const amount = parseFloat(document.getElementById("amount").value);
-      const month = document.getElementById("month").value;
-      const payment_mode = document.getElementById("paymentMode").value;
+  await fetch(`${backendUrl}/CollectFee`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      student_name,
+      month: "October",       // or take from input if you want dynamic
+      amount,
+      payment_mode: "UPI"     // or dynamic input
+    })
+  });
 
-      try {
-        const res = await fetch(`${backendUrl}/CollectFee`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ student_name, amount, month, payment_mode })
-        });
+  document.getElementById("student").value = "";
+  document.getElementById("amount").value = "";
+  loadFees();
+});
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        // Reset form
-        document.getElementById("studentName").value = "";
-        document.getElementById("amount").value = "";
-        document.getElementById("month").value = "";
-        document.getElementById("paymentMode").value = "UPI";
-
-        loadFees();
       } catch (err) {
         console.error("Error submitting fee:", err);
         alert("Failed to submit fee. Check backend logs.");
